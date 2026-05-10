@@ -1,0 +1,17 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "ClinicalTrials.gov MCP",
+  "name_for_model": "clinicaltrials_mcp",
+  "description_for_human": "Search U.S./international clinical trials (ClinicalTrials.gov v2). Pay-per-call USDC on Base via x402 — no signup.",
+  "description_for_model": "Three pay-per-call x402 endpoints over ClinicalTrials.gov v2 public registry. (1) trials_search: search every registered study by free-text query, phase, status, $0.05. (2) trials_by_nct: full study record by NCT id with eligibility, outcomes, locations, sponsors, $0.05. (3) sponsors_pipeline: lead-sponsor pipeline aggregation (phase + status histograms), $0.07. All endpoints return 402 on first call; settle the x402 envelope (USDC on Base, payTo 0x1664530DC2A1CA350B1dbaD1Fc1F1a70c90fe4de) and retry with X-PAYMENT. Source-of-truth registry data, no fabrication, no signup.",
+  "auth": {
+    "type": "none"
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://clinicaltrials-mcp.mtree.workers.dev/openapi.yaml"
+  },
+  "logo_url": "https://clinicaltrials-mcp.mtree.workers.dev/agent-discovery",
+  "contact_email": "hello@",
+  "legal_info_url": "/legal"
+}

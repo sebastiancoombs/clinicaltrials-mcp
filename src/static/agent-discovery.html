@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ClinicalTrials.gov MCP — x402 pay-per-call</title>
+  <meta name="description" content="Three pay-per-call x402 endpoints over ClinicalTrials.gov v2: trials/search ($0.05), trials/by_nct ($0.05), sponsors/pipeline ($0.07). Pay USDC on Base. No signup, no API key.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://clinicaltrials-mcp.mtree.workers.dev/agent-discovery">
+  <style>
+    :root { color-scheme: light dark; }
+    body { font: 16px/1.5 -apple-system,system-ui,sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+    code, pre { font: 13px/1.5 ui-monospace,Menlo,monospace; }
+    pre { background: #f4f4f4; padding: 12px; overflow-x: auto; border-radius: 6px; }
+    h1, h2 { margin-top: 1.5em; }
+    .pill { display: inline-block; padding: 2px 8px; background: #eef; border-radius: 999px; font-size: 12px; margin-right: 4px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { text-align: left; border-bottom: 1px solid #ddd; padding: 6px 8px; }
+    @media (prefers-color-scheme: dark) {
+      pre { background: #1f1f1f; }
+      th, td { border-bottom-color: #333; }
+      .pill { background: #2a2a3a; }
+    }
+  </style>
+</head>
+<body>
+  <h1>ClinicalTrials.gov MCP <span class="pill">x402</span> <span class="pill">USDC on Base</span></h1>
+  <p><strong>Pay-per-call MCP for ClinicalTrials.gov v2.</strong> Three endpoints, no signup, no API key. Settle USDC on Base via x402.</p>
+
+  <h2>Endpoints</h2>
+  <table>
+    <thead><tr><th>Endpoint</th><th>Source</th><th>Price</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>GET /v1/trials/search</code></td>
+        <td>ClinicalTrials.gov v2 study search</td>
+        <td>$0.05</td>
+      </tr>
+      <tr>
+        <td><code>GET /v1/trials/by_nct</code></td>
+        <td>ClinicalTrials.gov v2 single-study record</td>
+        <td>$0.05</td>
+      </tr>
+      <tr>
+        <td><code>GET /v1/sponsors/pipeline</code></td>
+        <td>ClinicalTrials.gov v2 sponsor pipeline aggregation</td>
+        <td>$0.07</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Discovery surfaces</h2>
+  <ul>
+    <li><a href="/.well-known/agent-card.json"><code>/.well-known/agent-card.json</code></a> — Google A2A AgentCard</li>
+    <li><a href="/.well-known/mcp.json"><code>/.well-known/mcp.json</code></a> — MCP server manifest</li>
+    <li><a href="/.well-known/ai-plugin.json"><code>/.well-known/ai-plugin.json</code></a> — OpenAI plugin manifest</li>
+    <li><a href="/openapi.yaml"><code>/openapi.yaml</code></a> — OpenAPI 3.1 spec</li>
+    <li><a href="/mcp"><code>/mcp</code></a> — MCP Streamable HTTP transport (JSON-RPC 2.0)</li>
+  </ul>
+
+  <h2>Quick start (curl)</h2>
+  <pre><code># 1) First call returns 402 with x402 envelope:
+curl -i 'https://clinicaltrials-mcp.mtree.workers.dev/v1/trials/search?q=cancer&phase=PHASE3&status=RECRUITING&size=5'
+
+# 2) Settle the envelope (sign EXACT-scheme USDC payment on Base, payTo as advertised),
+#    then retry with X-PAYMENT header. The response is the actual data.
+
+# Other examples:
+curl -i 'https://clinicaltrials-mcp.mtree.workers.dev/v1/trials/by_nct?nct=NCT04368728'
+curl -i 'https://clinicaltrials-mcp.mtree.workers.dev/v1/sponsors/pipeline?sponsor=Pfizer&size=25'</code></pre>
+
+  <h2>Why this exists</h2>
+  <p>ClinicalTrials.gov is fully open at the source, but the agent-friendly access pattern isn't: nested JSON Schema-of-Schemas, multi-page Atom-style flow control, and you have to parse the protocolSection/identificationModule/identificationModule.nctId tree yourself. This service is the x402-native door — agents pay USDC for flat agent-callable rows, no human onboarding, no contracts, no minimum.</p>
+
+  <h2>Repo</h2>
+  <p><a href="https://github.com/sebastiancoombs/clinicaltrials-mcp">github.com/sebastiancoombs/clinicaltrials-mcp</a></p>
+</body>
+</html>

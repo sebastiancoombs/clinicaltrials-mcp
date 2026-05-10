@@ -1,0 +1,116 @@
+{
+  "name": "ClinicalTrials.gov MCP",
+  "description": "Three pay-per-call x402 endpoints over the ClinicalTrials.gov v2 public registry: trials/search ($0.05), trials/by_nct ($0.05), sponsors/pipeline ($0.07). No signup, no API key — pay USDC on Base.",
+  "url": "https://clinicaltrials-mcp.mtree.workers.dev",
+  "version": "0.1.0",
+  "documentationUrl": "https://clinicaltrials-mcp.mtree.workers.dev/agent-discovery",
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false,
+    "stateTransitionHistory": false
+  },
+  "authentication": {
+    "schemes": [
+      "x402"
+    ],
+    "credentials": "Pay-per-call via x402 USDC on Base — no signup, no API key. Each call returns 402 with an EXACT-scheme requirement; agents pay 0x1664530DC2A1CA350B1dbaD1Fc1F1a70c90fe4de in Base USDC and retry with X-PAYMENT."
+  },
+  "defaultInputModes": [
+    "application/json"
+  ],
+  "defaultOutputModes": [
+    "application/json"
+  ],
+  "skills": [
+    {
+      "id": "trials-search",
+      "name": "Clinical Trial Search (ClinicalTrials.gov v2)",
+      "description": "Search the live ClinicalTrials.gov v2 registry of every U.S./international clinical study by free-text query, phase (PHASE1..PHASE4/EARLY_PHASE1/NA), and overall status (RECRUITING, ACTIVE_NOT_RECRUITING, COMPLETED, TERMINATED). Returns flat agent-friendly rows with NCT id, title, status, phase, study type, conditions, lead sponsor, start date, and a direct ClinicalTrials.gov UI link. $0.05/call.",
+      "tags": [
+        "clinical-trials",
+        "clinicaltrials.gov",
+        "biotech",
+        "pharma",
+        "drug-development",
+        "medical",
+        "healthcare",
+        "fda",
+        "nih",
+        "research",
+        "epidemiology",
+        "oncology"
+      ],
+      "examples": [
+        "Find recruiting Phase 3 trials for glioblastoma",
+        "List active oncology studies sponsored by Pfizer in the last year",
+        "Search ClinicalTrials.gov for completed Alzheimer's Phase 2 trials with results posted"
+      ],
+      "inputModes": [
+        "application/json"
+      ],
+      "outputModes": [
+        "application/json"
+      ]
+    },
+    {
+      "id": "trials-by-nct",
+      "name": "Clinical Trial Lookup by NCT id",
+      "description": "Fetch the full ClinicalTrials.gov record for a single study by NCT id. Returns the flattened protocol section: identification, status, sponsors + collaborators, design (allocation/masking/primary purpose), full eligibility criteria with min/max age and gender, interventions, primary + secondary outcomes with time frames, recruitment locations, FDA-regulation flags, results-availability flag, and brief + detailed descriptions. $0.05/call.",
+      "tags": [
+        "clinical-trials",
+        "clinicaltrials.gov",
+        "nct-id",
+        "study-record",
+        "eligibility-criteria",
+        "outcomes",
+        "biotech",
+        "pharma",
+        "fda",
+        "trial-protocol",
+        "medical-research",
+        "drug-development"
+      ],
+      "examples": [
+        "Get the full protocol record for NCT04368728",
+        "What are the eligibility criteria and primary outcomes of NCT05158465?",
+        "Show me the recruitment locations and lead sponsor for NCT04611893"
+      ],
+      "inputModes": [
+        "application/json"
+      ],
+      "outputModes": [
+        "application/json"
+      ]
+    },
+    {
+      "id": "sponsors-pipeline",
+      "name": "Sponsor Pipeline Aggregation (ClinicalTrials.gov)",
+      "description": "Aggregate the public clinical-trial pipeline of a lead sponsor (pharma company, biotech, university, NIH institute). Returns by-phase and by-overall-status histograms plus the underlying flat trial rows for downstream filtering. Useful for competitive landscape analysis, biotech due-diligence, sponsor portfolio mapping, and tracking adversary/partner pipelines. $0.07/call.",
+      "tags": [
+        "clinical-trials",
+        "clinicaltrials.gov",
+        "pipeline",
+        "sponsor",
+        "pharma-pipeline",
+        "biotech-pipeline",
+        "competitive-intelligence",
+        "due-diligence",
+        "phase-distribution",
+        "drug-development",
+        "portfolio-mapping",
+        "histogram"
+      ],
+      "examples": [
+        "Show Pfizer's clinical pipeline aggregated by phase",
+        "What's the phase distribution of all Moderna trials?",
+        "Aggregate the National Cancer Institute's clinical-trial pipeline by overall status"
+      ],
+      "inputModes": [
+        "application/json"
+      ],
+      "outputModes": [
+        "application/json"
+      ]
+    }
+  ]
+}

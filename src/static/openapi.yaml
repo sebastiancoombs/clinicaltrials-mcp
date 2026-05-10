@@ -1,0 +1,120 @@
+openapi: 3.1.0
+info:
+  title: ClinicalTrials.gov MCP
+  version: 0.1.0
+  description: |
+    Three pay-per-call x402 endpoints over the ClinicalTrials.gov v2 public registry:
+    `trials/search` ($0.05), `trials/by_nct` ($0.05), `sponsors/pipeline` ($0.07).
+    Pay USDC on Base — no signup, no API key.
+  contact:
+    email: hello@
+servers:
+  - url: https://clinicaltrials-mcp.mtree.workers.dev
+x-pricing:
+  currency: USDC
+  network: base
+  pay_to: "0x1664530DC2A1CA350B1dbaD1Fc1F1a70c90fe4de"
+  scheme: x402-exact
+  endpoints:
+    - path: /v1/trials/search
+      method: GET
+      price_usd: 0.05
+      atomic_amount: 50000
+    - path: /v1/trials/by_nct
+      method: GET
+      price_usd: 0.05
+      atomic_amount: 50000
+    - path: /v1/sponsors/pipeline
+      method: GET
+      price_usd: 0.07
+      atomic_amount: 70000
+paths:
+  /v1/trials/search:
+    get:
+      summary: Search ClinicalTrials.gov v2 studies
+      description: |
+        Search the live ClinicalTrials.gov v2 registry by free-text query, phase
+        (PHASE1|PHASE2|PHASE3|PHASE4|EARLY_PHASE1|NA), and overall status
+        (RECRUITING|ACTIVE_NOT_RECRUITING|COMPLETED|TERMINATED|...). Returns flat rows
+        with NCT id, brief title, status, phase, study type, conditions, lead sponsor,
+        start date, and direct ClinicalTrials.gov UI link. $0.05 per call via x402 USDC on Base.
+      operationId: trialsSearch
+      x-x402-price-usd: 0.05
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string, example: "glioblastoma" }
+          description: Free-text query term
+        - in: query
+          name: phase
+          schema: { type: string, example: "PHASE3" }
+          description: Phase filter (PHASE1|PHASE2|PHASE3|PHASE4|EARLY_PHASE1|NA)
+        - in: query
+          name: status
+          schema: { type: string, example: "RECRUITING" }
+          description: Overall status filter
+        - in: query
+          name: size
+          schema: { type: integer, example: 25, minimum: 1, maximum: 100 }
+      responses:
+        '402': { description: Payment required (x402 envelope) }
+        '200': { description: Search results }
+  /v1/trials/by_nct:
+    get:
+      summary: Fetch a single ClinicalTrials.gov study by NCT id
+      description: |
+        Fetch the full ClinicalTrials.gov record for a single study by NCT id. Returns
+        the flattened protocol section: identification, status, sponsors + collaborators,
+        design (allocation/masking/primary purpose), full eligibility criteria with min/max
+        age and gender, interventions, primary + secondary outcomes, recruitment locations,
+        FDA-regulation flags, results-availability flag, and brief + detailed descriptions.
+        $0.05 per call via x402 USDC on Base.
+      operationId: trialByNct
+      x-x402-price-usd: 0.05
+      parameters:
+        - in: query
+          name: nct
+          required: true
+          schema: { type: string, example: "NCT04368728" }
+          description: NCT id (NCT followed by digits)
+      responses:
+        '402': { description: Payment required (x402 envelope) }
+        '200': { description: Study record }
+        '400': { description: Missing or invalid NCT id }
+        '404': { description: Study not found }
+  /v1/sponsors/pipeline:
+    get:
+      summary: Aggregate a sponsor's ClinicalTrials.gov pipeline
+      description: |
+        Aggregate the public clinical-trial pipeline of a lead sponsor (pharma, biotech,
+        university, NIH institute). Returns by-phase and by-overall-status histograms plus
+        the underlying flat trial rows for downstream filtering. Useful for competitive
+        landscape analysis, biotech due-diligence, and sponsor portfolio mapping.
+        $0.07 per call via x402 USDC on Base.
+      operationId: sponsorsPipeline
+      x-x402-price-usd: 0.07
+      parameters:
+        - in: query
+          name: sponsor
+          required: true
+          schema: { type: string, example: "Pfizer" }
+          description: Lead sponsor name (substring match)
+        - in: query
+          name: size
+          schema: { type: integer, example: 25, minimum: 1, maximum: 100 }
+      responses:
+        '402': { description: Payment required (x402 envelope) }
+        '200': { description: Aggregated pipeline }
+        '400': { description: Missing sponsor }
+  /healthz:
+    get:
+      summary: Liveness probe (unpaid)
+      operationId: healthz
+      responses:
+        '200': { description: Service is live }
+  /mcp:
+    post:
+      summary: MCP Streamable HTTP transport (JSON-RPC 2.0; unpaid catalog discovery)
+      operationId: mcpRpc
+      responses:
+        '200': { description: JSON-RPC response }

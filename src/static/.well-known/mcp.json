@@ -1,0 +1,46 @@
+{
+  "manifestVersion": "1.0",
+  "protocolVersions": ["2025-06-18"],
+  "servers": [
+    {
+      "id": "clinicaltrials-mcp",
+      "name": "ClinicalTrials.gov MCP (x402)",
+      "slug": "clinicaltrials-mcp",
+      "category": "Healthcare & Life Sciences",
+      "description": "Pay-per-call x402 MCP for ClinicalTrials.gov v2: trials/search ($0.05), trials/by_nct ($0.05), sponsors/pipeline ($0.07). Live on Cloudflare Workers. No signup, no API key — pay USDC on Base.",
+      "status": "stable",
+      "transport": {
+        "type": "http+sse",
+        "endpoint": "https://clinicaltrials-mcp.mtree.workers.dev/mcp"
+      },
+      "authentication": {
+        "scheme": "x402",
+        "credentials": "Pay-per-call via x402 USDC on Base — no signup, no API key. Each call returns 402 with an EXACT-scheme requirement; agents pay 0x1664530DC2A1CA350B1dbaD1Fc1F1a70c90fe4de in Base USDC and retry with X-PAYMENT."
+      },
+      "capabilities": {
+        "tools": true,
+        "resources": false,
+        "prompts": false,
+        "logging": false
+      },
+      "docsUrl": "https://clinicaltrials-mcp.mtree.workers.dev/agent-discovery",
+      "tools": [
+        {
+          "name": "/v1/trials/search",
+          "method": "GET",
+          "description": "Search ClinicalTrials.gov v2 by free-text q, phase, and overall status. Flat rows. $0.05."
+        },
+        {
+          "name": "/v1/trials/by_nct",
+          "method": "GET",
+          "description": "Fetch the full ClinicalTrials.gov record for a single NCT id (eligibility, outcomes, locations, sponsors). $0.05."
+        },
+        {
+          "name": "/v1/sponsors/pipeline",
+          "method": "GET",
+          "description": "Aggregate a lead sponsor's clinical-trial pipeline (phase + status histograms + flat rows). $0.07."
+        }
+      ]
+    }
+  ]
+}
