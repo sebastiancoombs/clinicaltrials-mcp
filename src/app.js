@@ -32,7 +32,89 @@ const PRICE_BY_PATH = {
   "/v1/sponsors/pipeline": 70000,
 };
 
+const PAID_GET_PATHS = new Set(["/v1/trials/search", "/v1/trials/by_nct", "/v1/sponsors/pipeline"]);
+
 const app = new Hono();
+
+function serviceBaseUrl(c) {
+  const proto = c.req.header("x-forwarded-proto") || "https";
+  const host = c.req.header("host") || `${SERVICE_SLUG}.mtree.workers.dev`;
+  return `${proto}://${host}`;
+}
+
+function endpointInfo(c, path) {
+  const amount = PRICE_BY_PATH[path];
+  if (!amount) return null;
+  return {
+    service: SERVICE_SLUG,
+    endpoint: path,
+    method: "GET",
+    price: `$${(amount / 1_000_000).toFixed(3)}`,
+    atomic_amount: amount,
+    network: NETWORK,
+    pay_to: PAY_TO || null,
+    hint: "GET this path with query parameters and an x402 payment. HEAD is an unpaid metadata check; trailing slashes redirect to the canonical path.",
+  };
+}
+
+// Agent compatibility layer — keep common discovery / availability checks from
+// falling into the 404 telemetry bucket. Agents do not all know our exact
+// filenames or slash policy, so be liberal on read-only metadata paths.
+app.use(async (c, next) => {
+  const method = c.req.method.toUpperCase();
+  const path = c.req.path;
+  const normalized = path.length > 1 && path.endsWith("/") ? path.slice(0, -1) : path;
+
+  if (method === "OPTIONS") return c.text("", 204);
+
+  if (method === "GET" && ["/.well-known/x402", "/.well-known/x402.json"].includes(normalized)) {
+    return c.json({
+      service: SERVICE_SLUG,
+      x402: true,
+      network: NETWORK,
+      pay_to: PAY_TO || null,
+      endpoints: Object.fromEntries(
+        Object.entries(PRICE_BY_PATH).map(([p, amount]) => [
+          `GET ${p}`,
+          { price: `$${(amount / 1_000_000).toFixed(3)}`, atomic_amount: amount, network: NETWORK },
+        ])
+      ),
+      discovery: {
+        service: serviceBaseUrl(c),
+        agent_card: `${serviceBaseUrl(c)}/.well-known/agent-card.json`,
+        mcp: `${serviceBaseUrl(c)}/.well-known/mcp.json`,
+        openapi: `${serviceBaseUrl(c)}/openapi.yaml`,
+      },
+    });
+  }
+
+  if (method === "GET" && ["/openapi.json", "/swagger.json", "/v3/api-docs", "/api-docs", "/api/docs"].includes(normalized)) {
+    return c.text(openapiYaml, 200, { "content-type": "application/yaml" });
+  }
+
+
+  if (method === "GET" && PAID_GET_PATHS.has(normalized) && path !== normalized) {
+    const qs = new URL(c.req.url).search;
+    return c.redirect(`${normalized}${qs}`, 308);
+  }
+
+  if ((method === "HEAD" || (method === "GET" && !PAID_GET_PATHS.has(normalized))) && PRICE_BY_PATH[normalized]) {
+    const info = endpointInfo(c, normalized);
+    if (method === "HEAD") {
+      return c.body(null, 204, {
+        "x-money-tree-service": SERVICE_SLUG,
+        "x-money-tree-endpoint": normalized,
+        "x-money-tree-price-usdc": info.price,
+        "x-money-tree-network": NETWORK,
+        "link": `<${serviceBaseUrl(c)}/openapi.yaml>; rel="service-desc"`,
+      });
+    }
+    return c.json(info);
+  }
+
+  return next();
+});
+
 
 app.get("/healthz", (c) =>
   c.json({
@@ -76,6 +158,7 @@ app.get("/", (c) =>
 );
 
 if (PAY_TO) {
+  app.use(paidCallsCapture({ service: SERVICE_SLUG, priceByPath: PRICE_BY_PATH }));
   app.use(
     paymentMiddleware(
       PAY_TO,
@@ -208,7 +291,7 @@ if (PAY_TO) {
     )
   );
   // Capture X-PAYMENT-RESPONSE → paid_calls D1.
-  app.use(paidCallsCapture({ service: SERVICE_SLUG, priceByPath: PRICE_BY_PATH }));
+
   console.log(
     `[startup] facilitator=${
       CDP_API_KEY_ID && CDP_API_KEY_SECRET
@@ -253,7 +336,7 @@ app.get("/v1/sponsors/pipeline", async (c) => {
   }
 });
 
-mountPaidCallsAdmin(app);
+mountPaidCallsAdmin(app, { service: SERVICE_SLUG });
 mountUnknownRoutesAdmin(app);
 
 // 404 catch-all (must be LAST — captures every unmatched request).
